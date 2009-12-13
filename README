@@ -1,0 +1,57 @@
+MessagePack PHP extension
+-----------
+Binary-based efficient data interchange format.
+
+
+*Requirements
+
+  MessagePack PHP Extension is only tested on Linux , but it may run on other
+  UNIX-like platforms.
+
+  gcc >= 4.1
+  php5-dev >= 5.2
+
+   are required to build.
+
+
+*Installation
+
+    $ phpize
+    $ ./configure
+    $ make
+    $ sudo make install
+
+  To load extension, copy ini/msgpack.ini to included path and restart apache.
+
+  For example, to install on Debian GNU/Linux, 
+    $ cp ini/msgpack.ini /etc/php5/apache2/conf.d/
+    $ sudo /etc/init.d/apache2 restart
+
+*Test
+
+  phpunit is required to test.
+    $ cd test
+    $ make test
+
+*Usage
+
+    see example/sample.php for example.
+
+    $  php sample.php
+
+
+
+Copyright (C) 2008-2009 Takayuki Sato
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+

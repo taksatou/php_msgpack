@@ -1,0 +1,121 @@
+<?php
+require_once('PHPUnit/Framework.php');
+
+function check($src, $should)
+{
+  $index = 0;
+  while ($src->remain()) {
+    if ($src->unpacker(NULL) !== $should[$index++])
+      return false;
+  }
+  return true;
+}
+
+class TestFormat extends PHPUnit_Framework_TestCase
+{
+  function testSimpleValue()
+  {
+    $obj = new Msgpack;
+    
+    $obj->feed(pack("c*", 0xc0, 0xc2, 0xc3));
+    $should = array(null, false, true);
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testFixnum()
+  {
+    $obj = new Msgpack;
+    
+    $obj->feed(pack("c*", 0x00, 0x40, 0x7f, 0xe0, 0xf0, 0xff));
+    $should = array(0, 64, 127, -32, -16, -1);
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testFixArray()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0x80, 0x81, 0x00, 0xc0));
+    $should = array(array(), array(null));
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testFixRaw()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0xa0, 0xa1, 0x61, 0xa2, 0x62, 0x63, 0xa3, 0x64, 0x65, 0x66));
+    $should = array("", "a", "bc", "def");
+    $this->assertTrue(check($obj, $should));
+  }
+  
+  function testFixMap()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0x82,
+		    0x00, 0x81, 0x00, 0x00,
+		    0x01, 0x81, 0x00, 0x80));
+    $should = array(array(
+			  0 => array(0),
+			  1 => array(
+				     0 => array())
+			  ));
+    $this->assertTrue(check($obj, $should));
+  }
+  
+  function testUnsignedInt()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0xcc, 0x00, 0xcc, 0x80, 0xcc, 0xff,
+		    0xcd, 0x00, 0x00, 0xcd, 0x80, 0x00, 0xcd, 0xff, 0xff,
+		    0xce, 0x00, 0x00, 0x00, 0x00, 0xce, 0x80, 0x00, 0x00, 0x00,
+		    0xce, 0xff, 0xff, 0xff, 0xff));
+    $should = array(0, 128, 255, 0, 32768, 65535, 0, 2147483648, 4294967295);
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testSignedInt()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0xd0, 0x00, 0xd0, 0x80, 0xd0, 0xff, 0xd1, 0x00, 0x00, 0xd1, 0x80, 0x00,
+		    0xd1, 0xff, 0xff, 0xd2, 0x00, 0x00, 0x00, 0x00,
+		    0xd2, 0x80, 0x00, 0x00, 0x00, 0xd2, 0xff, 0xff, 0xff, 0xff));
+    $should = array(0, -128, -1, 0, -32768, -1, 0, -2147483648, -1);
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testRaw()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0xda, 0x00, 0x00, 0xda, 0x00, 0x01, 0x61, 0xda, 0x00, 0x02, 0x61, 0x62,
+		    0xdb, 0x00, 0x00, 0x00, 0x00,
+		    0xdb, 0x00, 0x00, 0x00, 0x01, 0x61,
+		    0xdb, 0x00, 0x00, 0x00, 0x02, 0x61, 0x62));
+    $should = array("", "a", "ab", "", "a", "ab");
+    $this->assertTrue(check($obj, $should));
+  }
+
+  function testMap()
+  {
+    $obj = new Msgpack;
+
+    $obj->feed(pack("c*", 0xde, 0x00, 0x00,
+		    0xde, 0x00, 0x01, 0x00, 0xc2,
+		    0xde, 0x00, 0x02, 0x01, 0xc2, 0x00, 0xc2,
+		    0xdf, 0x00, 0x00, 0x00, 0x00,
+		    0xdf, 0x00, 0x00, 0x00, 0x01, 0x00, 0xc2,
+		    0xdf, 0x00, 0x00, 0x00, 0x02, 0x01, 0xc2, 0x00, 0xc2));
+    $should = array(
+		    array(),
+		    array(0 => false),
+		    array(1 => false, 0 => false),
+		    array(),
+		    array(0 => false),
+		    array(1 => false, 0 => false));
+    $this->assertTrue(check($obj, $should));
+  }
+}
